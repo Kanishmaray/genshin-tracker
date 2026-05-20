@@ -1,4 +1,26 @@
+import supabase from './supabase.js'
+
 const PREFIX = 'genshin_tracker_'
+const SYNC_ID_KEY = 'genshin_tracker_sync_id'
+
+// ─── Sync ID ────────────────────────────────────────────────────────────────
+
+export function getSyncId() {
+  let id = localStorage.getItem(SYNC_ID_KEY)
+  if (!id) {
+    id = Math.random().toString(36).substr(2, 8).toUpperCase()
+    localStorage.setItem(SYNC_ID_KEY, id)
+  }
+  return id
+}
+
+export function setSyncId(newId) {
+  const trimmed = newId.trim().toUpperCase()
+  localStorage.setItem(SYNC_ID_KEY, trimmed)
+  return trimmed
+}
+
+// ─── Core localStorage helpers ───────────────────────────────────────────────
 
 function getKey(key) {
   return PREFIX + key
@@ -17,10 +39,52 @@ function getItem(key, fallback = null) {
 function setItem(key, value) {
   try {
     localStorage.setItem(getKey(key), JSON.stringify(value))
+    pushToCloud(key, value)
   } catch (e) {
     console.warn('Storage error:', e)
   }
 }
+
+// ─── Supabase sync ───────────────────────────────────────────────────────────
+
+async function pushToCloud(key, value) {
+  if (!supabase) return
+  try {
+    const syncId = getSyncId()
+    await supabase
+      .from('character_progress')
+      .upsert(
+        { device_id: syncId, character_id: key, data: value, updated_at: new Date().toISOString() },
+        { onConflict: 'device_id,character_id' }
+      )
+  } catch (e) {
+    console.warn('Supabase push error:', e)
+  }
+}
+
+export async function syncFromCloud(syncId) {
+  if (!supabase) return false
+  try {
+    const id = (syncId || getSyncId()).trim().toUpperCase()
+    const { data, error } = await supabase
+      .from('character_progress')
+      .select('character_id, data')
+      .eq('device_id', id)
+
+    if (error || !data || data.length === 0) return false
+
+    for (const row of data) {
+      localStorage.setItem(PREFIX + row.character_id, JSON.stringify(row.data))
+    }
+    if (syncId) localStorage.setItem(SYNC_ID_KEY, id)
+    return true
+  } catch (e) {
+    console.warn('Supabase pull error:', e)
+    return false
+  }
+}
+
+// ─── Checklist ───────────────────────────────────────────────────────────────
 
 export const DEFAULT_CHECKLIST = {
   weapon_tier: 'none',
@@ -51,6 +115,8 @@ export function getChecklist(charId) {
 export function setChecklist(charId, data) {
   setItem('checklist_' + charId, data)
 }
+
+// ─── Todos ───────────────────────────────────────────────────────────────────
 
 export function getTodos(charId) {
   return getItem('todos_' + charId, [])
@@ -89,6 +155,8 @@ export function deleteTodo(charId, id) {
   return todos
 }
 
+// ─── Notes ───────────────────────────────────────────────────────────────────
+
 export function getNotes(charId) {
   return getItem('notes_' + charId, { general: '', plans: '' })
 }
@@ -96,6 +164,8 @@ export function getNotes(charId) {
 export function setNotes(charId, data) {
   setItem('notes_' + charId, data)
 }
+
+// ─── Activity log ─────────────────────────────────────────────────────────────
 
 export function getActivityLog() {
   return getItem('activity_log', [])
@@ -110,11 +180,12 @@ export function logActivity(charId, type, description) {
     description,
     timestamp: new Date().toISOString(),
   })
-  // Keep only last 20
   const trimmed = log.slice(0, 20)
   setItem('activity_log', trimmed)
   return trimmed
 }
+
+// ─── Upcoming events ─────────────────────────────────────────────────────────
 
 export function getUpcomingEvents() {
   return getItem('upcoming_events', [])

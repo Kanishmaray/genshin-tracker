@@ -5,6 +5,7 @@ import {
   getNotes, setNotes,
   logActivity,
   DEFAULT_CHECKLIST,
+  getSyncId, setSyncId, syncFromCloud,
 } from './storage'
 import { CHARACTERS, CHARACTER_ORDER } from '../data/characters'
 
@@ -15,8 +16,10 @@ export function GameDataProvider({ children }) {
   const [todos, setTodos] = useState({})
   const [notes, setNotes_state] = useState({})
   const [initialized, setInitialized] = useState(false)
+  const [syncId, setSyncIdState] = useState(getSyncId())
+  const [syncing, setSyncing] = useState(false)
 
-  useEffect(() => {
+  const loadLocal = useCallback(() => {
     const cls = {}
     const tds = {}
     const nts = {}
@@ -28,8 +31,31 @@ export function GameDataProvider({ children }) {
     setChecklists(cls)
     setTodos(tds)
     setNotes_state(nts)
-    setInitialized(true)
   }, [])
+
+  useEffect(() => {
+    async function init() {
+      await syncFromCloud()
+      loadLocal()
+      setInitialized(true)
+    }
+    init()
+  }, [])
+
+  const doSync = useCallback(async (id) => {
+    setSyncing(true)
+    try {
+      const success = await syncFromCloud(id || undefined)
+      if (success) {
+        const newId = (id || getSyncId()).trim().toUpperCase()
+        setSyncIdState(newId)
+        loadLocal()
+      }
+      return success
+    } finally {
+      setSyncing(false)
+    }
+  }, [loadLocal])
 
   const updateChecklist = useCallback((charId, field, value) => {
     setChecklists(prev => {
@@ -93,64 +119,35 @@ export function GameDataProvider({ children }) {
     const cl = checklists[charId] || DEFAULT_CHECKLIST
     let points = 0
     let max = 0
-
-    // Weapon (15 points)
     max += 15
     if (cl.weapon_tier === 'bis') points += 15
     else if (cl.weapon_tier === 'bp') points += 10
     else if (cl.weapon_tier === 'f2p') points += 5
-
-    // Artifact pieces (5 * 8 = 40 points)
     const pieces = ['flower', 'feather', 'sands', 'goblet', 'circlet']
-    pieces.forEach(p => {
-      max += 8
-      if (cl[p]) points += 8
-    })
-
-    // Artifact levels (5 * 4 = 20 points)
-    pieces.forEach(p => {
-      max += 4
-      const lv = cl[p + '_lv'] || 0
-      points += Math.round((lv / 20) * 4)
-    })
-
-    // Stat goals (3 * 5 = 15 points)
+    pieces.forEach(p => { max += 8; if (cl[p]) points += 8 })
+    pieces.forEach(p => { max += 4; const lv = cl[p + '_lv'] || 0; points += Math.round((lv / 20) * 4) })
     max += 15
     if (cl.stat_goal_1) points += 5
     if (cl.stat_goal_2) points += 5
     if (cl.stat_goal_3) points += 5
-
-    // Talents (2 * 5 = 10 points)
     max += 10
     if (cl.skill_talent) points += 5
     if (cl.burst_talent) points += 5
-
     return max > 0 ? Math.round((points / max) * 100) : 0
   }, [checklists])
 
   const allBuildProgress = useCallback(() => {
     const result = {}
-    Object.keys(CHARACTERS).forEach(id => {
-      result[id] = buildProgress(id)
-    })
+    Object.keys(CHARACTERS).forEach(id => { result[id] = buildProgress(id) })
     return result
   }, [buildProgress])
 
   return (
     <GameDataContext.Provider value={{
-      checklists,
-      todos,
-      notes,
-      initialized,
-      updateChecklist,
-      addTodo,
-      toggleTodo,
-      deleteTodo,
-      updateTodoItem,
-      updateNotes,
-      buildScore,
-      buildProgress,
-      allBuildProgress,
+      checklists, todos, notes, initialized,
+      syncId, syncing, doSync,
+      updateChecklist, addTodo, toggleTodo, deleteTodo, updateTodoItem, updateNotes,
+      buildScore, buildProgress, allBuildProgress,
     }}>
       {children}
     </GameDataContext.Provider>
