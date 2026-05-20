@@ -1,24 +1,10 @@
 import supabase from './supabase.js'
 
 const PREFIX = 'genshin_tracker_'
-const SYNC_ID_KEY = 'genshin_tracker_sync_id'
 
-// ─── Sync ID ────────────────────────────────────────────────────────────────
-
-export function getSyncId() {
-  let id = localStorage.getItem(SYNC_ID_KEY)
-  if (!id) {
-    id = Math.random().toString(36).substr(2, 8).toUpperCase()
-    localStorage.setItem(SYNC_ID_KEY, id)
-  }
-  return id
-}
-
-export function setSyncId(newId) {
-  const trimmed = newId.trim().toUpperCase()
-  localStorage.setItem(SYNC_ID_KEY, trimmed)
-  return trimmed
-}
+// Fixed sync identity — all devices share this single ID automatically.
+// No sync code entry needed.
+const SYNC_ID = 'KANISHMARAY'
 
 // ─── Core localStorage helpers ───────────────────────────────────────────────
 
@@ -39,7 +25,7 @@ function getItem(key, fallback = null) {
 function setItem(key, value) {
   try {
     localStorage.setItem(getKey(key), JSON.stringify(value))
-    pushToCloud(key, value)
+    pushToCloud(key, value) // fire-and-forget
   } catch (e) {
     console.warn('Storage error:', e)
   }
@@ -50,11 +36,10 @@ function setItem(key, value) {
 async function pushToCloud(key, value) {
   if (!supabase) return
   try {
-    const syncId = getSyncId()
     await supabase
       .from('character_progress')
       .upsert(
-        { device_id: syncId, character_id: key, data: value, updated_at: new Date().toISOString() },
+        { device_id: SYNC_ID, character_id: key, data: value, updated_at: new Date().toISOString() },
         { onConflict: 'device_id,character_id' }
       )
   } catch (e) {
@@ -62,21 +47,21 @@ async function pushToCloud(key, value) {
   }
 }
 
-export async function syncFromCloud(syncId) {
+// Pull all data for SYNC_ID from Supabase into localStorage.
+// Returns true if any data was loaded, false otherwise.
+export async function syncFromCloud() {
   if (!supabase) return false
   try {
-    const id = (syncId || getSyncId()).trim().toUpperCase()
     const { data, error } = await supabase
       .from('character_progress')
       .select('character_id, data')
-      .eq('device_id', id)
+      .eq('device_id', SYNC_ID)
 
     if (error || !data || data.length === 0) return false
 
     for (const row of data) {
       localStorage.setItem(PREFIX + row.character_id, JSON.stringify(row.data))
     }
-    if (syncId) localStorage.setItem(SYNC_ID_KEY, id)
     return true
   } catch (e) {
     console.warn('Supabase pull error:', e)
