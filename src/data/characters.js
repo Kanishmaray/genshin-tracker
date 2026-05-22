@@ -14,7 +14,7 @@ export const CHARACTERS = {
     role: 'Main DPS',
     rarity: 5,
     priority: 'S',
-    image: 'characters/zibai.webp'
+    image: 'characters/zibai.webp',
     status: 'currently_building',
     team: ['team1'],
     constellation: { current: 0, goal: 2 },
@@ -217,7 +217,7 @@ export const CHARACTERS = {
     role: 'Main DPS',
     rarity: 5,
     priority: 'A',
-    image: 'characters/flins.webp'
+    image: 'characters/flins.webp',
     status: 'currently_building',
     team: ['team2'],
     constellation: { current: 0, goal: 2 },
