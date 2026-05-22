@@ -69,7 +69,7 @@ export const CHARACTERS = {
     role: 'Support/Healer',
     rarity: 5,
     priority: 'A',
-    image: null, // e.g. 'characters/aino.png'
+    image: 'characters/aino.png',
     status: 'currently_building',
     team: ['team1', 'team2'],
     constellation: { current: 0, goal: 0 },
@@ -116,7 +116,7 @@ export const CHARACTERS = {
     role: 'Support/Sub-DPS',
     rarity: 5,
     priority: 'B',
-    image: null, // e.g. 'characters/illuga.png'
+    image: 'characters/illuga.png',
     status: 'currently_building',
     team: ['team1'],
     constellation: { current: 0, goal: 0 },
@@ -163,7 +163,7 @@ export const CHARACTERS = {
     role: 'Healer/Shield/Support',
     rarity: 4,
     priority: 'B',
-    image: null, // e.g. 'characters/noelle.png'
+    image: 'characters/noelle.png',
     status: 'currently_building',
     team: ['team1'],
     constellation: { current: 0, goal: 6 },
@@ -272,7 +272,7 @@ export const CHARACTERS = {
     role: 'Sub-DPS',
     rarity: 4,
     priority: 'B',
-    image: null, // e.g. 'characters/fischl.png'
+    image: 'characters/ischl.png',
     status: 'currently_building',
     team: ['team2'],
     constellation: { current: 3, goal: 6 },
