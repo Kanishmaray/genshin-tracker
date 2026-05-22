@@ -104,7 +104,21 @@ export function setChecklist(charId, data) {
 // ─── Todos ───────────────────────────────────────────────────────────────────
 
 export function getTodos(charId) {
-  return getItem('todos_' + charId, [])
+  const todos = getItem('todos_' + charId, [])
+  const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000
+  const now = Date.now()
+  // Auto-purge completed todos that were marked done more than 10 days ago
+  const filtered = todos.filter(t => {
+    if (t.completed && t.completedAt) {
+      return now - new Date(t.completedAt).getTime() < TEN_DAYS_MS
+    }
+    return true
+  })
+  if (filtered.length !== todos.length) {
+    // Something was purged — persist the trimmed list without triggering another cloud push loop
+    try { localStorage.setItem(getKey('todos_' + charId), JSON.stringify(filtered)) } catch {}
+  }
+  return filtered
 }
 
 export function addTodo(charId, todoObj) {
@@ -113,6 +127,7 @@ export function addTodo(charId, todoObj) {
     id: Date.now().toString(),
     text: '',
     completed: false,
+    completedAt: null,
     scheduledFor: null,
     resourceType: null,
     resourceTarget: null,
@@ -128,6 +143,14 @@ export function updateTodo(charId, id, updates) {
   const todos = getTodos(charId)
   const idx = todos.findIndex(t => t.id === id)
   if (idx !== -1) {
+    // Stamp completedAt when marking done; clear it when un-completing
+    if ('completed' in updates) {
+      if (updates.completed && !todos[idx].completedAt) {
+        updates = { ...updates, completedAt: new Date().toISOString() }
+      } else if (!updates.completed) {
+        updates = { ...updates, completedAt: null }
+      }
+    }
     todos[idx] = { ...todos[idx], ...updates }
     setItem('todos_' + charId, todos)
   }

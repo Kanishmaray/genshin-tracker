@@ -402,13 +402,24 @@ export default function CharacterPage() {
                 <StarRating count={char.rarity} size="sm" />
                 <span className="text-sm text-gray-400">{char.role}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-gray-500">
-                  Constellation: <span style={{ color: colors.primary }}>C{currentConst}</span>
-                  {char.constellation.goal > 0 && (
-                    <span className="text-gray-600"> → C{char.constellation.goal}</span>
-                  )}
-                </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Constellation:</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => updateChecklist(id, 'const_current', Math.max(0, currentConst - 1))}
+                    className="w-5 h-5 rounded flex items-center justify-center text-xs text-gray-400 hover:text-gray-100 transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                  >−</button>
+                  <span className="text-sm font-bold px-2 min-w-[28px] text-center" style={{ color: colors.primary }}>C{currentConst}</span>
+                  <button
+                    onClick={() => updateChecklist(id, 'const_current', Math.min(6, currentConst + 1))}
+                    className="w-5 h-5 rounded flex items-center justify-center text-xs text-gray-400 hover:text-gray-100 transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+                  >+</button>
+                </div>
+                {char.constellation.goal > 0 && (
+                  <span className="text-xs text-gray-600">→ C{char.constellation.goal}</span>
+                )}
               </div>
             </div>
             <div className="flex flex-col items-center gap-1">
@@ -600,25 +611,41 @@ export default function CharacterPage() {
             <Section title="TASK LIST" color={colors.primary}>
               <div className="space-y-2 mb-3">
                 {charTodos.length === 0 && <p className="text-gray-600 text-sm">No tasks yet.</p>}
-                {charTodos.map(todo => (
-                  <div key={todo.id} className="flex items-center gap-2 group">
-                    <button onClick={() => toggleTodo(id, todo.id)}
-                      className="w-5 h-5 rounded flex-shrink-0 flex items-center justify-center transition-all"
-                      style={{
-                        background: todo.completed ? colors.primary : 'rgba(255,255,255,0.06)',
-                        border: `1px solid ${todo.completed ? colors.primary : 'rgba(255,255,255,0.12)'}`,
-                      }}>
-                      {todo.completed && <Check size={10} className="text-black" />}
-                    </button>
-                    <span className={`flex-1 text-sm ${todo.completed ? 'line-through text-gray-600' : 'text-gray-200'}`}>
-                      {todo.text}
-                    </span>
-                    <button onClick={() => deleteTodo(id, todo.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-600 hover:text-red-400">
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                ))}
+                {charTodos.map(todo => {
+                  const daysLeft = (() => {
+                    if (!todo.completed || !todo.completedAt) return null
+                    const elapsed = Date.now() - new Date(todo.completedAt).getTime()
+                    return Math.max(0, 10 - Math.floor(elapsed / (24 * 60 * 60 * 1000)))
+                  })()
+                  return (
+                    <div key={todo.id}
+                      className="flex items-start gap-2 group rounded-lg px-2 py-1.5 transition-colors"
+                      style={todo.completed ? { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' } : {}}>
+                      <button onClick={() => toggleTodo(id, todo.id)}
+                        className="w-5 h-5 rounded flex-shrink-0 flex items-center justify-center transition-all mt-0.5"
+                        style={{
+                          background: todo.completed ? colors.primary : 'rgba(255,255,255,0.06)',
+                          border: `1px solid ${todo.completed ? colors.primary : 'rgba(255,255,255,0.12)'}`,
+                        }}>
+                        {todo.completed && <Check size={10} className="text-black" />}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <span className={`text-sm leading-tight ${todo.completed ? 'line-through text-gray-600' : 'text-gray-200'}`}>
+                          {todo.text}
+                        </span>
+                        {todo.completed && daysLeft !== null && (
+                          <div className="text-xs mt-0.5" style={{ color: daysLeft <= 2 ? '#F87171' : 'rgba(100,105,120,0.7)' }}>
+                            ✓ Done · auto-removes in {daysLeft} day{daysLeft !== 1 ? 's' : ''}
+                          </div>
+                        )}
+                      </div>
+                      <button onClick={() => deleteTodo(id, todo.id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-600 hover:text-red-400 flex-shrink-0">
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
               <form onSubmit={handleAddTodo} className="flex gap-2">
                 <input type="text" placeholder="Add a task..."
