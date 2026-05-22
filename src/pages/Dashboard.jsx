@@ -12,6 +12,7 @@ import FloatingParticles from '../components/common/FloatingParticles'
 import GlowCard from '../components/common/GlowCard'
 import ProgressRing from '../components/common/ProgressRing'
 import ElementBadge from '../components/common/ElementBadge'
+import CharacterCard from '../components/common/CharacterCard'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -118,7 +119,6 @@ export default function Dashboard() {
         }}
       >
         <FloatingParticles color="#D4A017" count={16} />
-        {/* Constellation geometry */}
         <div className="absolute inset-0 pointer-events-none opacity-10">
           {[...Array(6)].map((_, i) => (
             <div
@@ -136,7 +136,6 @@ export default function Dashboard() {
             />
           ))}
         </div>
-
         <motion.div {...container(0.1)} className="relative z-10">
           <div className="flex items-baseline gap-3 mb-1">
             <span className="text-amber-500 text-xs tracking-[0.3em] font-medium uppercase">Traveler's</span>
@@ -152,6 +151,29 @@ export default function Dashboard() {
         </motion.div>
       </div>
 
+      {/* Roster Card Grid */}
+      <div className="px-4 md:px-6 pt-5 pb-1">
+        <motion.div {...container(0.05)}>
+          <div className="flex items-center gap-2 mb-4">
+            <span className="font-display text-xs font-semibold text-gray-500 tracking-[0.2em] uppercase">Roster</span>
+            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+            <span className="text-xs text-gray-600">{CHARACTER_ORDER.length} characters</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+            {CHARACTER_ORDER.map((id, i) => (
+              <motion.div
+                key={id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.05 + i * 0.06 }}
+              >
+                <CharacterCard char={CHARACTERS[id]} />
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+
       <div className="p-4 md:p-6 space-y-6">
         {/* Stat Cards */}
         <motion.div variants={stagger} initial="initial" animate="animate" className="grid grid-cols-3 gap-3">
@@ -159,7 +181,7 @@ export default function Dashboard() {
             <StatCard icon={TrendingUp} label="Avg Progress" value={`${avgProgress}%`} color="#D4A017" />
           </motion.div>
           <motion.div variants={childVariant}>
-            <StatCard icon={Trophy} label="Well Built" value={fullyBuilt} color="#4ADE80" sub="≥80% done" />
+            <StatCard icon={Trophy} label="Well Built" value={fullyBuilt} color="#4ADE80" sub=">=80% done" />
           </motion.div>
           <motion.div variants={childVariant}>
             <StatCard icon={Target} label="In Progress" value={inProgress} color="#60A5FA" />
@@ -272,10 +294,7 @@ export default function Dashboard() {
                   onChange={e => setNewTask(e.target.value)}
                   className="flex-1 text-sm bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-gray-200 placeholder-gray-600 focus:outline-none focus:border-blue-400/50"
                 />
-                <button
-                  type="submit"
-                  className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-400/10 transition-colors"
-                >
+                <button type="submit" className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-400/10 transition-colors">
                   <Plus size={16} />
                 </button>
               </form>
@@ -296,16 +315,11 @@ export default function Dashboard() {
                       onClick={() => navigate(`/character/${id}`)}
                       className="w-full flex items-center gap-3 py-1.5 hover:bg-white/5 rounded-lg px-2 transition-colors group"
                     >
-                      <span className="text-xs font-bold w-4" style={{ color: PCOLORS[char.priority] }}>
-                        {char.priority}
-                      </span>
+                      <span className="text-xs font-bold w-4" style={{ color: PCOLORS[char.priority] }}>{char.priority}</span>
                       <span className="text-sm text-gray-300 flex-1 text-left">{char.name}</span>
                       <div className="flex items-center gap-2">
                         <div className="w-20 h-1.5 rounded-full bg-white/5 overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all"
-                            style={{ width: `${p}%`, background: char.colors.primary }}
-                          />
+                          <div className="h-full rounded-full transition-all" style={{ width: `${p}%`, background: char.colors.primary }} />
                         </div>
                         <span className="text-xs text-gray-500 w-8 text-right">{p}%</span>
                       </div>
@@ -334,31 +348,17 @@ export default function Dashboard() {
                     className="rounded-xl p-2 text-center"
                     style={{
                       background: isToday ? 'rgba(212,160,23,0.12)' : 'rgba(255,255,255,0.03)',
-                      border: isToday
-                        ? '1px solid rgba(212,160,23,0.4)'
-                        : '1px solid rgba(255,255,255,0.06)',
+                      border: isToday ? '1px solid rgba(212,160,23,0.4)' : '1px solid rgba(255,255,255,0.06)',
                       boxShadow: isToday ? '0 0 16px rgba(212,160,23,0.15)' : 'none',
                     }}
                   >
-                    <div className={`text-xs font-bold mb-1.5 ${isToday ? 'text-amber-400' : 'text-gray-500'}`}>
-                      {day}
-                    </div>
+                    <div className={`text-xs font-bold mb-1.5 ${isToday ? 'text-amber-400' : 'text-gray-500'}`}>{day}</div>
                     <div className="space-y-1">
                       {chars.slice(0, day === 'Sun' ? 7 : 4).map(id => (
-                        <button
-                          key={id}
-                          onClick={() => navigate(`/character/${id}`)}
-                          className="w-full text-center hover:opacity-80 transition-opacity"
-                          title={CHARACTERS[id]?.name}
-                        >
+                        <button key={id} onClick={() => navigate(`/character/${id}`)} className="w-full text-center hover:opacity-80 transition-opacity" title={CHARACTERS[id]?.name}>
                           <div
                             className="w-5 h-5 rounded-full mx-auto flex items-center justify-center text-xs font-bold"
-                            style={{
-                              background: CHARACTERS[id]?.colors.primary + '22',
-                              color: CHARACTERS[id]?.colors.primary,
-                              border: `1px solid ${CHARACTERS[id]?.colors.primary}44`,
-                              fontSize: 8,
-                            }}
+                            style={{ background: CHARACTERS[id]?.colors.primary + '22', color: CHARACTERS[id]?.colors.primary, border: `1px solid ${CHARACTERS[id]?.colors.primary}44`, fontSize: 8 }}
                           >
                             {CHARACTERS[id]?.name.slice(0, 2).toUpperCase()}
                           </div>
@@ -390,13 +390,10 @@ export default function Dashboard() {
                 <tbody>
                   {CHARACTER_ORDER.map(id => {
                     const char = CHARACTERS[id]
-                    const savedCl = (() => {
-                      try { return JSON.parse(localStorage.getItem('genshin_tracker_checklist_' + id) || '{}') } catch { return {} }
-                    })()
+                    const savedCl = (() => { try { return JSON.parse(localStorage.getItem('genshin_tracker_checklist_' + id) || '{}') } catch { return {} } })()
                     const pieces = ['flower', 'feather', 'sands', 'goblet', 'circlet']
                     const levels = pieces.map(p => savedCl[p + '_lv'] || 0)
                     const avg = Math.round(levels.reduce((a, b) => a + b, 0) / pieces.length)
-
                     function levelColor(lv) {
                       if (lv >= 20) return '#4ADE80'
                       if (lv >= 16) return '#A78BFA'
@@ -405,7 +402,6 @@ export default function Dashboard() {
                       if (lv >= 4) return '#FB923C'
                       return 'rgba(255,255,255,0.08)'
                     }
-
                     return (
                       <tr key={id} className="border-t border-white/[0.04]">
                         <td className="py-2 pr-3 font-medium" style={{ color: char.colors.primary }}>{char.name}</td>
@@ -413,10 +409,7 @@ export default function Dashboard() {
                           const lv = savedCl[p + '_lv'] || 0
                           return (
                             <td key={p} className="px-1 text-center">
-                              <div
-                                className="w-6 h-6 rounded-md mx-auto flex items-center justify-center text-xs font-bold"
-                                style={{ background: levelColor(lv), color: lv > 0 ? '#000' : 'transparent' }}
-                              >
+                              <div className="w-6 h-6 rounded-md mx-auto flex items-center justify-center text-xs font-bold" style={{ background: levelColor(lv), color: lv > 0 ? '#000' : 'transparent' }}>
                                 {lv > 0 ? lv : ''}
                               </div>
                             </td>
@@ -429,14 +422,7 @@ export default function Dashboard() {
                 </tbody>
               </table>
               <div className="flex items-center gap-3 mt-3 pt-3 text-xs text-gray-600" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                {[
-                  { color: 'rgba(255,255,255,0.08)', label: '+0' },
-                  { color: '#FB923C', label: '+4' },
-                  { color: '#D4A017', label: '+8' },
-                  { color: '#60A5FA', label: '+12' },
-                  { color: '#A78BFA', label: '+16' },
-                  { color: '#4ADE80', label: '+20' },
-                ].map(item => (
+                {[{ color: 'rgba(255,255,255,0.08)', label: '+0' }, { color: '#FB923C', label: '+4' }, { color: '#D4A017', label: '+8' }, { color: '#60A5FA', label: '+12' }, { color: '#A78BFA', label: '+16' }, { color: '#4ADE80', label: '+20' }].map(item => (
                   <div key={item.label} className="flex items-center gap-1">
                     <div className="w-3 h-3 rounded" style={{ background: item.color }} />
                     <span>{item.label}</span>
@@ -457,14 +443,9 @@ export default function Dashboard() {
               )}
               {activityLog.slice(0, 8).map(entry => (
                 <div key={entry.id} className="flex items-center gap-3 text-sm">
-                  <div
-                    className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                    style={{ background: CHARACTERS[entry.charId]?.colors.primary || '#fff' }}
-                  />
+                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: CHARACTERS[entry.charId]?.colors.primary || '#fff' }} />
                   <span className="text-gray-400 flex-1 truncate">{entry.description}</span>
-                  <span className="text-gray-600 text-xs flex-shrink-0">
-                    {new Date(entry.timestamp).toLocaleDateString()}
-                  </span>
+                  <span className="text-gray-600 text-xs flex-shrink-0">{new Date(entry.timestamp).toLocaleDateString()}</span>
                 </div>
               ))}
             </div>
