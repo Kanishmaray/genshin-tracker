@@ -14,7 +14,7 @@ export const CHARACTERS = {
     role: 'Main DPS',
     rarity: 5,
     priority: 'S',
-    image: null, // e.g. 'characters/zibai.png'
+    image: 'characters/zibai.webp',
     status: 'currently_building',
     team: ['team1'],
     constellation: { current: 0, goal: 2 },
@@ -69,7 +69,7 @@ export const CHARACTERS = {
     role: 'Support/Healer',
     rarity: 5,
     priority: 'A',
-    image: null, // e.g. 'characters/aino.png'
+    image: 'characters/aino.webp',
     status: 'currently_building',
     team: ['team1', 'team2'],
     constellation: { current: 0, goal: 0 },
@@ -123,7 +123,7 @@ export const CHARACTERS = {
     role: 'Support/Sub-DPS',
     rarity: 5,
     priority: 'B',
-    image: null, // e.g. 'characters/illuga.png'
+    image: 'characters/illuga.webp',
     status: 'currently_building',
     team: ['team1'],
     constellation: { current: 0, goal: 0 },
@@ -177,7 +177,7 @@ export const CHARACTERS = {
     role: 'Healer/Shield/Support',
     rarity: 4,
     priority: 'B',
-    image: null, // e.g. 'characters/noelle.png'
+    image: 'characters/noelle.png',
     status: 'currently_building',
     team: ['team1'],
     constellation: { current: 0, goal: 6 },
@@ -231,7 +231,7 @@ export const CHARACTERS = {
     role: 'Main DPS',
     rarity: 5,
     priority: 'A',
-    image: null, // e.g. 'characters/flins.png'
+    image: 'characters/flins.webp',
     status: 'currently_building',
     team: ['team2'],
     constellation: { current: 0, goal: 2 },
@@ -286,7 +286,7 @@ export const CHARACTERS = {
     role: 'Sub-DPS',
     rarity: 4,
     priority: 'B',
-    image: null, // e.g. 'characters/fischl.png'
+    image: 'characters/ischl.webp',
     status: 'currently_building',
     team: ['team2'],
     constellation: { current: 3, goal: 6 },
@@ -340,7 +340,7 @@ export const CHARACTERS = {
     role: 'Support',
     rarity: 4,
     priority: 'A',
-    image: null, // e.g. 'characters/sucrose.png'
+    image: 'characters/sucrose.webp',
     status: 'currently_building',
     team: ['team2'],
     constellation: { current: 5, goal: 6 },
