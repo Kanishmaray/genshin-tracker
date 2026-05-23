@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Plus, Trash2, Check, BookOpen, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react'
 import { CHARACTERS, TEAMS } from '../data/characters'
 import { useGameData } from '../lib/useGameData'
-import FloatingParticles from '../components/common/FloatingParticles'
+import ElementParticles from '../components/common/ElementParticles'
 import GlowCard from '../components/common/GlowCard'
 import ProgressRing from '../components/common/ProgressRing'
 import StarRating from '../components/common/StarRating'
@@ -44,8 +44,56 @@ function Section({ title, color, children, defaultOpen = true }) {
   )
 }
 
+// ── Inject perfect-glow pulse keyframe once ───────────────────────────────────
+let _glowStyleInjected = false
+function ensureGlowStyle() {
+  if (_glowStyleInjected) return
+  const el = document.createElement('style')
+  el.textContent = `
+    @keyframes perfectPulse {
+      0%,100% { box-shadow: 0 0 22px rgba(255,210,0,0.28), 0 0 44px rgba(255,105,180,0.16); }
+      50%      { box-shadow: 0 0 38px rgba(255,210,0,0.58), 0 0 68px rgba(255,105,180,0.34); }
+    }
+  `
+  document.head.appendChild(el)
+  _glowStyleInjected = true
+}
+
+// ── Constellation burst particles ─────────────────────────────────────────────
+function BurstParticles({ color }) {
+  return (
+    <div style={{ position: 'absolute', top: '50%', left: '50%', pointerEvents: 'none', zIndex: 20 }}>
+      {Array.from({ length: 10 }, (_, i) => {
+        const angle = (i / 10) * 2 * Math.PI
+        const dist  = 32 + Math.random() * 18
+        const tx = Math.cos(angle) * dist
+        const ty = Math.sin(angle) * dist
+        const size = 4 + Math.random() * 4
+        return (
+          <motion.div
+            key={i}
+            initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+            animate={{ x: tx, y: ty, opacity: 0, scale: 0.2 }}
+            transition={{ duration: 0.52, ease: 'easeOut', delay: i * 0.02 }}
+            style={{
+              position: 'absolute',
+              width: size, height: size,
+              borderRadius: '50%',
+              background: color,
+              boxShadow: `0 0 10px ${color}, 0 0 18px ${color}88`,
+              translateX: '-50%',
+              translateY: '-50%',
+            }}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Artifact slot card ────────────────────────────────────────────────────────
 function ArtifactCard({ piece, cl, color, onTogglePiece, onToggleStat, onLvChange }) {
+  ensureGlowStyle()
   const { key, label, emoji, stat, fixed } = piece
   const hasPiece = !!cl[key]
   const hasRightStat = fixed ? true : !!cl[key + '_mainstat']
@@ -57,7 +105,7 @@ function ArtifactCard({ piece, cl, color, onTogglePiece, onToggleStat, onLvChang
     cardStyle = {
       background: 'linear-gradient(135deg, rgba(255,210,0,0.12) 0%, rgba(255,105,180,0.10) 100%)',
       border: '1.5px solid rgba(255,210,0,0.55)',
-      boxShadow: '0 0 22px rgba(255,210,0,0.28), 0 0 44px rgba(255,105,180,0.16)',
+      animation: 'perfectPulse 2.5s ease-in-out infinite',
     }
   } else if (hasPiece) {
     cardStyle = {
@@ -433,6 +481,7 @@ export default function CharacterPage() {
 
   const [newTodoText, setNewTodoText] = useState('')
   const [activeTab, setActiveTab] = useState('build')
+  const [burstId, setBurstId] = useState(null)
 
   if (!char) {
     return (
@@ -475,7 +524,7 @@ export default function CharacterPage() {
           minHeight: 200,
         }}
       >
-        <FloatingParticles color={colors.primary} count={18} />
+        <ElementParticles element={char.element} color={colors.primary} />
 
         {(char.banner || char.image) ? (
           <div className="absolute inset-0 pointer-events-none" style={{ overflow: 'hidden' }}>
@@ -544,9 +593,22 @@ export default function CharacterPage() {
                     className="w-5 h-5 rounded flex items-center justify-center text-xs text-gray-400 hover:text-gray-100 transition-colors"
                     style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
                   >−</button>
-                  <span className="text-sm font-bold px-2 min-w-[28px] text-center" style={{ color: colors.primary }}>C{currentConst}</span>
+                  <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span className="text-sm font-bold px-2 min-w-[28px] text-center" style={{ color: colors.primary }}>C{currentConst}</span>
+                    <AnimatePresence>
+                      {burstId && (
+                        <BurstParticles key={burstId} color={colors.primary} />
+                      )}
+                    </AnimatePresence>
+                  </div>
                   <button
-                    onClick={() => updateChecklist(id, 'const_current', Math.min(6, currentConst + 1))}
+                    onClick={() => {
+                      if (currentConst < 6) {
+                        updateChecklist(id, 'const_current', currentConst + 1)
+                        setBurstId(Date.now())
+                        setTimeout(() => setBurstId(null), 700)
+                      }
+                    }}
                     className="w-5 h-5 rounded flex items-center justify-center text-xs text-gray-400 hover:text-gray-100 transition-colors"
                     style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
                   >+</button>
