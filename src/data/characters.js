@@ -118,7 +118,7 @@ export const CHARACTERS = {
   illuga: {
     id: 'illuga',
     name: 'Illuga',
-    element: 'Cryo',
+    element: 'Geo',
     weapon: 'Polearm',
     role: 'Support/Sub-DPS',
     rarity: 5,
