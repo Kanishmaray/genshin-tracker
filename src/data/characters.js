@@ -177,7 +177,7 @@ export const CHARACTERS = {
     role: 'Healer/Shield/Support',
     rarity: 4,
     priority: 'B',
-    image: 'characters/noelle.png',
+    image: 'characters/noelle.webp',
     status: 'currently_building',
     team: ['team1'],
     constellation: { current: 0, goal: 6 },
