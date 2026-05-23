@@ -44,6 +44,140 @@ function Section({ title, color, children, defaultOpen = true }) {
   )
 }
 
+// ── Artifact slot card ────────────────────────────────────────────────────────
+function ArtifactCard({ piece, cl, color, onTogglePiece, onToggleStat, onLvChange }) {
+  const { key, label, emoji, stat, fixed } = piece
+  const hasPiece = !!cl[key]
+  const hasRightStat = fixed ? true : !!cl[key + '_mainstat']
+  const isPerfect = hasPiece && hasRightStat
+  const lv = cl[key + '_lv'] || 0
+
+  let cardStyle
+  if (isPerfect) {
+    cardStyle = {
+      background: 'linear-gradient(135deg, rgba(255,210,0,0.12) 0%, rgba(255,105,180,0.10) 100%)',
+      border: '1.5px solid rgba(255,210,0,0.55)',
+      boxShadow: '0 0 22px rgba(255,210,0,0.28), 0 0 44px rgba(255,105,180,0.16)',
+    }
+  } else if (hasPiece) {
+    cardStyle = {
+      background: `${color}10`,
+      border: `1.5px solid ${color}55`,
+      boxShadow: `0 0 18px ${color}22`,
+    }
+  } else {
+    cardStyle = {
+      background: 'rgba(255,255,255,0.025)',
+      border: '1px solid rgba(255,255,255,0.06)',
+    }
+  }
+
+  return (
+    <div style={{ borderRadius: 14, padding: 12, transition: 'all 0.35s', ...cardStyle }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <span style={{ fontSize: 20, opacity: hasPiece ? 1 : 0.28, transition: 'opacity 0.3s' }}>{emoji}</span>
+        <span style={{
+          fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+          color: isPerfect ? '#FFD700' : hasPiece ? color : '#374151',
+          textShadow: isPerfect ? '0 0 14px rgba(255,210,0,0.7)' : hasPiece ? `0 0 10px ${color}77` : 'none',
+          transition: 'all 0.3s',
+        }}>{label}</span>
+      </div>
+
+      {/* Target stat */}
+      {stat && (
+        <div style={{
+          fontSize: 11, marginBottom: 10,
+          color: isPerfect ? 'rgba(255,210,0,0.85)' : hasPiece ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.18)',
+          fontStyle: hasPiece ? 'normal' : 'italic',
+          transition: 'all 0.3s',
+        }}>
+          {stat}
+        </div>
+      )}
+
+      {/* Checkboxes */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: hasPiece ? 10 : 0 }}>
+        {/* Got piece / Got it */}
+        <button
+          onClick={() => {
+            const next = !hasPiece
+            onTogglePiece(next)
+            // if unchecking piece, also clear stat
+            if (!next) onToggleStat(false)
+          }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 7, background: 'none',
+            border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left',
+          }}
+        >
+          <span style={{
+            width: 17, height: 17, borderRadius: 5, flexShrink: 0,
+            background: hasPiece ? (isPerfect ? '#FFD700' : color) : 'rgba(255,255,255,0.06)',
+            border: `1px solid ${hasPiece ? (isPerfect ? '#FFD700' : color) : 'rgba(255,255,255,0.14)'}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.2s',
+          }}>
+            {hasPiece && (
+              <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+                <path d="M1 3.5L3.5 6L8 1" stroke="#000" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </span>
+          <span style={{ fontSize: 11, color: hasPiece ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.28)' }}>
+            {fixed ? 'Got it' : 'Got piece'}
+          </span>
+        </button>
+
+        {/* Right main stat (variable pieces only) */}
+        {!fixed && (
+          <button
+            onClick={() => hasPiece && onToggleStat(!hasRightStat)}
+            disabled={!hasPiece}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7, background: 'none',
+              border: 'none', padding: 0, cursor: hasPiece ? 'pointer' : 'not-allowed',
+              opacity: hasPiece ? 1 : 0.35, textAlign: 'left', transition: 'opacity 0.2s',
+            }}
+          >
+            <span style={{
+              width: 17, height: 17, borderRadius: 5, flexShrink: 0,
+              background: hasRightStat ? '#FFD700' : 'rgba(255,255,255,0.06)',
+              border: `1px solid ${hasRightStat ? '#FFD700' : 'rgba(255,255,255,0.14)'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.2s',
+            }}>
+              {hasRightStat && (
+                <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+                  <path d="M1 3.5L3.5 6L8 1" stroke="#000" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </span>
+            <span style={{ fontSize: 11, color: hasRightStat ? 'rgba(255,210,0,0.9)' : 'rgba(255,255,255,0.28)' }}>
+              Right main stat ✦
+            </span>
+          </button>
+        )}
+      </div>
+
+      {/* Level slider — only when piece equipped */}
+      {hasPiece && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', minWidth: 18 }}>+{lv}</span>
+          <input
+            type="range" min={0} max={20} step={4}
+            value={lv}
+            onChange={e => onLvChange(parseInt(e.target.value))}
+            style={{ flex: 1, accentColor: isPerfect ? '#FFD700' : color, cursor: 'pointer' }}
+          />
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', minWidth: 16, textAlign: 'right' }}>20</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Flippable weapon card ─────────────────────────────────────────────────────
 function WeaponFlipCard({ label, name, tier, color, selected, onClick }) {
   const [hovered, setHovered] = useState(false)
@@ -320,11 +454,11 @@ export default function CharacterPage() {
   }
 
   const pieces = [
-    { key: 'flower', label: 'Flower' },
-    { key: 'feather', label: 'Feather' },
-    { key: 'sands', label: 'Sands', stat: char.artifact.sands },
-    { key: 'goblet', label: 'Goblet', stat: char.artifact.goblet },
-    { key: 'circlet', label: 'Circlet', stat: char.artifact.circlet },
+    { key: 'flower',  label: 'Flower',  emoji: '🌸', fixed: true },
+    { key: 'feather', label: 'Feather', emoji: '🪶', fixed: true },
+    { key: 'sands',   label: 'Sands',   emoji: '⏳', stat: char.artifact.sands },
+    { key: 'goblet',  label: 'Goblet',  emoji: '🏺', stat: char.artifact.goblet },
+    { key: 'circlet', label: 'Circlet', emoji: '👑', stat: char.artifact.circlet },
   ]
 
   const constellations = char.constellations || []
@@ -506,34 +640,17 @@ export default function CharacterPage() {
               <div className="mb-3 text-sm text-gray-400">
                 <span className="font-medium" style={{ color: colors.primary }}>{char.artifact.set}</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {pieces.map(p => (
-                  <div key={p.key} className="rounded-xl p-3 flex items-center gap-3"
-                    style={{
-                      background: cl[p.key] ? `${colors.primary}10` : 'rgba(255,255,255,0.03)',
-                      border: cl[p.key] ? `1px solid ${colors.primary}33` : '1px solid rgba(255,255,255,0.06)',
-                    }}>
-                    <button onClick={() => updateChecklist(id, p.key, !cl[p.key])}
-                      className="w-6 h-6 rounded-lg flex-shrink-0 flex items-center justify-center transition-all"
-                      style={{
-                        background: cl[p.key] ? colors.primary : 'rgba(255,255,255,0.06)',
-                        border: `1px solid ${cl[p.key] ? colors.primary : 'rgba(255,255,255,0.12)'}`,
-                      }}>
-                      {cl[p.key] && <Check size={12} className="text-black" />}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-200">{p.label}</div>
-                      {p.stat && <div className="text-xs text-gray-500 truncate">{p.stat}</div>}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-gray-500">+</span>
-                      <input type="number" min={0} max={20}
-                        value={cl[p.key + '_lv'] || 0}
-                        onChange={e => updateChecklist(id, p.key + '_lv', Math.max(0, Math.min(20, parseInt(e.target.value) || 0)))}
-                        className="w-10 text-center bg-white/5 border border-white/10 rounded text-xs text-gray-200 py-0.5 focus:outline-none"
-                      />
-                    </div>
-                  </div>
+                  <ArtifactCard
+                    key={p.key}
+                    piece={p}
+                    cl={cl}
+                    color={colors.primary}
+                    onTogglePiece={v => updateChecklist(id, p.key, v)}
+                    onToggleStat={v => updateChecklist(id, p.key + '_mainstat', v)}
+                    onLvChange={v => updateChecklist(id, p.key + '_lv', v)}
+                  />
                 ))}
               </div>
             </Section>
