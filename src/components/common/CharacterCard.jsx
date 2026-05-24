@@ -20,16 +20,15 @@ const FACTION_LABELS = {
 export default function CharacterCard({ char }) {
   const navigate = useNavigate()
   const [hovered, setHovered] = useState(false)
-  const { getBuildProgress, checklist: rawChecklist } = useGameData()
+  const { buildProgress, checklists } = useGameData()
 
-  const buildProgress = getBuildProgress(char.id)
-  const checklist = rawChecklist[char.id] || {}
+  const score = Math.round(buildProgress ? buildProgress(char.id) : 0)
+  const checklist = (checklists && checklists[char.id]) || {}
   const elemColor = ELEMENT_COLORS[char.element] || '#888'
   const rarityColor = RARITY_COLORS[char.rarity] || '#888'
 
   const pieceDone = PIECE_KEYS.filter(k => checklist[k]).length
   const weaponLabel = FACTION_LABELS[checklist.weapon_tier] || '—'
-  const score = Math.round(buildProgress)
 
   return (
     <div
@@ -62,7 +61,6 @@ export default function CharacterCard({ char }) {
             border: `1.5px solid ${elemColor}33`,
           }}
         >
-          {/* character image */}
           {char.image ? (
             <img
               src={char.image}
@@ -91,15 +89,11 @@ export default function CharacterCard({ char }) {
           }} />
 
           {/* rarity dots */}
-          <div style={{
-            position: 'absolute', top: 10, left: 10,
-            display: 'flex', gap: 3,
-          }}>
+          <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 3 }}>
             {Array(char.rarity || 4).fill(0).map((_, i) => (
               <div key={i} style={{
                 width: 6, height: 6, borderRadius: '50%',
-                background: rarityColor,
-                boxShadow: `0 0 4px ${rarityColor}`,
+                background: rarityColor, boxShadow: `0 0 4px ${rarityColor}`,
               }} />
             ))}
           </div>
@@ -119,25 +113,15 @@ export default function CharacterCard({ char }) {
           )}
 
           {/* name + element */}
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0,
-            padding: '10px 12px 13px',
-          }}>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px 12px 13px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-              <span style={{
-                fontSize: 14, fontWeight: 700, color: '#fff',
-                letterSpacing: '0.02em', textShadow: '0 1px 4px #000a',
-              }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#fff', letterSpacing: '0.02em', textShadow: '0 1px 4px #000a' }}>
                 {char.name}
               </span>
               <span style={{
-                fontSize: 8, fontWeight: 700,
-                padding: '1px 5px', borderRadius: 4,
-                background: `${elemColor}22`,
-                color: elemColor,
-                border: `1px solid ${elemColor}44`,
-                letterSpacing: '0.1em',
-                backdropFilter: 'blur(4px)',
+                fontSize: 8, fontWeight: 700, padding: '1px 5px', borderRadius: 4,
+                background: `${elemColor}22`, color: elemColor, border: `1px solid ${elemColor}44`,
+                letterSpacing: '0.1em', backdropFilter: 'blur(4px)',
               }}>
                 {char.element?.toUpperCase()}
               </span>
@@ -161,63 +145,39 @@ export default function CharacterCard({ char }) {
             background: `linear-gradient(135deg, #1a1a2e 0%, ${elemColor}18 100%)`,
             border: `1.5px solid ${elemColor}55`,
             boxShadow: `0 4px 24px ${elemColor}44`,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '14px 12px',
-            gap: 10,
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            padding: '14px 12px', gap: 10,
           }}
         >
-          {/* name header */}
-          <div style={{
-            fontSize: 13, fontWeight: 700, color: '#fff',
-            letterSpacing: '0.04em', textAlign: 'center',
-          }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', letterSpacing: '0.04em', textAlign: 'center' }}>
             {char.name}
           </div>
 
-          {/* progress ring */}
-          <ProgressRing
-            progress={score}
-            size={72}
-            strokeWidth={5}
-            color={elemColor}
-          />
+          <ProgressRing progress={score} size={72} strokeWidth={5} color={elemColor} />
 
-          {/* artifact pieces */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
             {PIECE_KEYS.map(k => (
-              <span
-                key={k}
-                title={k}
-                style={{
-                  fontSize: 16,
-                  opacity: checklist[k] ? 1 : 0.2,
-                  filter: checklist[k] ? `drop-shadow(0 0 4px ${elemColor})` : 'none',
-                  transition: 'opacity 0.2s',
-                }}
-              >
+              <span key={k} title={k} style={{
+                fontSize: 16,
+                opacity: checklist[k] ? 1 : 0.2,
+                filter: checklist[k] ? `drop-shadow(0 0 4px ${elemColor})` : 'none',
+                transition: 'opacity 0.2s',
+              }}>
                 {PIECE_ICONS[k]}
               </span>
             ))}
           </div>
 
-          {/* weapon tier + pieces count */}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <span style={{
-              fontSize: 10, fontWeight: 700,
-              padding: '2px 7px', borderRadius: 6,
-              background: `${elemColor}22`,
-              color: elemColor,
-              border: `1px solid ${elemColor}44`,
+              fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
+              background: `${elemColor}22`, color: elemColor, border: `1px solid ${elemColor}44`,
               letterSpacing: '0.08em',
             }}>
               {weaponLabel} weapon
             </span>
-            <span style={{
-              fontSize: 10, color: 'rgba(200,200,210,0.7)',
-            }}>
+            <span style={{ fontSize: 10, color: 'rgba(200,200,210,0.7)' }}>
               {pieceDone}/5 pieces
             </span>
           </div>
