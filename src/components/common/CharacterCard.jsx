@@ -109,12 +109,10 @@ export default function CharacterCard({ char }) {
                 background: `linear-gradient(135deg, ${elemColor}33, ${rarityColor}33)`,
               }} />
             )}
-            {/* Bottom scrim */}
             <div style={{
               position: 'absolute', inset: 0,
               background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 50%, transparent 100%)',
             }} />
-            {/* Rarity dots */}
             <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 3 }}>
               {Array.from({ length: char.rarity || 4 }).map((_, i) => (
                 <div key={i} style={{
@@ -123,7 +121,6 @@ export default function CharacterCard({ char }) {
                 }} />
               ))}
             </div>
-            {/* Name + element */}
             <div style={{ position: 'absolute', bottom: 10, left: 10, right: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                 <span style={{
@@ -152,7 +149,7 @@ export default function CharacterCard({ char }) {
             border: `1.5px solid ${elemColor}66`,
             background: `linear-gradient(160deg, rgba(8,8,20,0.97) 0%, ${elemColor}30 100%)`,
             display: 'flex', flexDirection: 'column',
-            padding: '12px 14px', gap: 6,
+            padding: '12px 14px', gap: 7,
           }}>
             {/* Name + element */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -164,20 +161,23 @@ export default function CharacterCard({ char }) {
               }}>{char.element?.toUpperCase()}</span>
             </div>
 
-            {/* Score ring + artifact pieces */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <ProgressRing progress={score} size={52} color={elemColor} />
-              <div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>Artifacts</div>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  {PIECE_KEYS.map(k => (
-                    <span key={k} style={{
-                      fontSize: 14,
-                      opacity: checklist[k] ? 1 : 0.25,
-                      filter: checklist[k] ? 'none' : 'grayscale(1)',
-                    }}>{PIECE_ICONS[k]}</span>
-                  ))}
-                </div>
+            {/* Score ring — own row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <ProgressRing progress={score} size={44} color={elemColor} />
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>Build Score</div>
+            </div>
+
+            {/* Artifact pieces — full-width row so all 5 fit */}
+            <div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>Artifacts</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                {PIECE_KEYS.map(k => (
+                  <span key={k} style={{
+                    fontSize: 18,
+                    opacity: checklist[k] ? 1 : 0.2,
+                    filter: checklist[k] ? 'none' : 'grayscale(1)',
+                  }}>{PIECE_ICONS[k]}</span>
+                ))}
               </div>
             </div>
 
