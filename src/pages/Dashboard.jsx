@@ -43,14 +43,14 @@ function StatCard({ icon: Icon, label, value, color, sub }) {
   return (
     <GlowCard color={color} className="p-4 flex items-center gap-4">
       <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0"
         style={{ background: `${color}18`, border: `1px solid ${color}33` }}
       >
         <Icon size={20} style={{ color }} />
       </div>
       <div>
-        <div className="text-2xl font-bold" style={{ color }}>{value}</div>
-        <div className="text-xs text-gray-500">{label}</div>
+              <div className="text-xl sm:text-2xl font-bold" style={{ color }}>{value}</div>
+          <div className="text-[10px] sm:text-xs text-gray-500 leading-tight">{label}</div>
         {sub && <div className="text-xs text-gray-600 mt-0.5">{sub}</div>}
       </div>
     </GlowCard>
