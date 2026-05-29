@@ -338,7 +338,8 @@ export default function Dashboard() {
               <Calendar size={16} className="text-teal-400" />
               <h2 className="font-display text-sm font-semibold text-gray-300 tracking-wider">TALENT CALENDAR</h2>
             </div>
-            <div className="grid grid-cols-7 gap-2">
+            <div className="overflow-x-auto -mx-1 pb-1">
+              <div className="grid grid-cols-7 gap-1.5 min-w-[400px]">
               {DAYS.map((day, i) => {
                 const chars = TALENT_CALENDAR[day] || []
                 const isToday = day === todayDay
@@ -368,6 +369,7 @@ export default function Dashboard() {
                   </div>
                 )
               })}
+            </div>
             </div>
           </GlowCard>
         </motion.div>

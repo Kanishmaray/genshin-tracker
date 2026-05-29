@@ -1,39 +1,74 @@
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameData } from '../../lib/useGameData'
 import ProgressRing from './ProgressRing'
 
 const ELEMENT_COLORS = {
-  Pyro: '#FF6B35', Hydro: '#4FC3F7', Anemo: '#2DD4BF',
-  Electro: '#C084FC', Cryo: '#94A3B8', Geo: '#FBBF24', Dendro: '#86EFAC',
+  Geo: '#D4A017', Electro: '#A855F7', Anemo: '#2DD4BF',
+  Hydro: '#38BDF8', Pyro: '#FB923C', Cryo: '#94A3B8', Dendro: '#4ADE80',
 }
-const RARITY_COLORS = { 5: '#C0713A', 4: '#8B6FA8' }
-const PIECE_ICONS = { flower: '🌸', feather: '🪶', sands: '⏳', goblet: '🏆', circlet: '👑' }
+const PRIORITY_COLORS = { S: '#FFD700', A: '#C084FC', B: '#60A5FA', C: '#6B7280' }
+const PIECE_ICONS = ['🌸', '🪶', '⏳', '🏺', '👑']
 const PIECE_KEYS = ['flower', 'feather', 'sands', 'goblet', 'circlet']
-const FACTION_LABELS = { bis: 'BiS', bp: 'BP', f2p: 'F2P', good: 'Good', skip: 'Skip', none: '—' }
+const WEAPON_LABELS = { bis: 'BiS', bp: 'BP', f2p: 'F2P', none: '—' }
+
+// Detect touch-primary device once on load
+const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
 
 export default function CharacterCard({ char }) {
   const navigate = useNavigate()
+  const { buildProgress, checklists } = useGameData()
+
+  const progress = buildProgress(char.id)
+  const cl = checklists[char.id] || {}
+  const elemColor = ELEMENT_COLORS[char.element] || '#ffffff'
+  const priorityColor = PRIORITY_COLORS[char.priority]
+  const equippedCount = PIECE_KEYS.filter(p => cl[p]).length
+  const weaponLabel = WEAPON_LABELS[cl.weapon_tier || 'none']
+
+  const outerRef = useRef(null)
+  const flipTimerRef = useRef(null)
   const [flipped, setFlipped] = useState(false)
   const [flipDone, setFlipDone] = useState(false)
   const [tilt, setTilt] = useState({ rx: 0, ry: 0, lx: 50, ly: 50 })
-  const outerRef = useRef(null)
-  const flipTimerRef = useRef(null)
-  const { buildProgress, checklists } = useGameData()
 
-  const score = Math.round(buildProgress ? buildProgress(char.id) : 0)
-  const checklist = (checklists && checklists[char.id]) || {}
-  const elemColor = ELEMENT_COLORS[char.element] || '#888'
-  const rarityColor = RARITY_COLORS[char.rarity] || '#888'
-  const pieceDone = PIECE_KEYS.filter(k => checklist[k]).length
-  const weaponLabel = FACTION_LABELS[checklist.weapon_tier] || '—'
+  // Touch: tap front flips card, tap back navigates to character page
+  const handleClick = useCallback((e) => {
+    if (IS_TOUCH) {
+      if (!flipped) {
+        setFlipped(true)
+        flipTimerRef.current = setTimeout(() => setFlipDone(true), 520)
+      } else {
+        navigate(`/character/${char.id}`)
+      }
+      return
+    }
+    navigate(`/character/${char.id}`)
+  }, [flipped, navigate, char.id])
 
+  // Tap outside card on mobile → flip back to front
+  useEffect(() => {
+    if (!IS_TOUCH || !flipped) return
+    const handleOutside = (e) => {
+      if (outerRef.current && !outerRef.current.contains(e.target)) {
+        clearTimeout(flipTimerRef.current)
+        setFlipped(false)
+        setFlipDone(false)
+      }
+    }
+    document.addEventListener('touchstart', handleOutside, { passive: true })
+    return () => document.removeEventListener('touchstart', handleOutside)
+  }, [flipped])
+
+  // Desktop: hover triggers flip, then tilt
   const handleMouseEnter = useCallback(() => {
+    if (IS_TOUCH) return
     setFlipped(true)
     flipTimerRef.current = setTimeout(() => setFlipDone(true), 520)
   }, [])
 
   const handleMouseLeave = useCallback(() => {
+    if (IS_TOUCH) return
     clearTimeout(flipTimerRef.current)
     setFlipped(false)
     setFlipDone(false)
@@ -41,7 +76,7 @@ export default function CharacterCard({ char }) {
   }, [])
 
   const handleMouseMove = useCallback((e) => {
-    if (!flipDone || !outerRef.current) return
+    if (IS_TOUCH || !flipDone || !outerRef.current) return
     const rect = outerRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
@@ -54,44 +89,37 @@ export default function CharacterCard({ char }) {
     <div
       ref={outerRef}
       style={{
-        height: 240,
+        height: 220,
         cursor: 'pointer',
         borderRadius: 16,
         perspective: '900px',
+        WebkitTapHighlightColor: 'transparent',
         boxShadow: flipped
-          ? `0 8px 32px ${elemColor}55, 0 2px 8px rgba(0,0,0,0.5)`
+          ? `0 8px 32px ${elemColor}44, 0 2px 8px rgba(0,0,0,0.5)`
           : `0 4px 16px ${elemColor}22, 0 2px 4px rgba(0,0,0,0.3)`,
         transition: 'box-shadow 0.3s ease',
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
-      onClick={() => navigate('/character/' + char.id)}
+      onClick={handleClick}
     >
-      {/* Tilt layer — activates after flip settles */}
+      {/* Tilt layer */}
       <div style={{
-        width: '100%',
-        height: '100%',
-        transformStyle: 'preserve-3d',
-        transform: flipDone
+        width: '100%', height: '100%', transformStyle: 'preserve-3d',
+        transform: flipDone && !IS_TOUCH
           ? `rotateX(${tilt.rx}deg) rotateY(${-tilt.ry}deg) scale(1.04)`
           : flipped ? 'scale(1.01)' : 'scale(1)',
-        transition: flipDone
-          ? 'transform 0.08s ease-out'
-          : 'transform 0.4s ease-out',
+        transition: flipDone && !IS_TOUCH ? 'transform 0.08s ease-out' : 'transform 0.4s ease-out',
       }}>
         {/* Flip layer */}
         <div style={{
-          width: '100%',
-          height: '100%',
-          position: 'relative',
-          transformStyle: 'preserve-3d',
+          width: '100%', height: '100%', position: 'relative', transformStyle: 'preserve-3d',
           transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-          transition: 'transform 0.5s ease-in-out',
-          borderRadius: 16,
+          transition: 'transform 0.5s ease-in-out', borderRadius: 16,
         }}>
 
-          {/* ── FRONT FACE ── */}
+          {/* FRONT FACE */}
           <div style={{
             position: 'absolute', inset: 0,
             backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
@@ -99,123 +127,133 @@ export default function CharacterCard({ char }) {
             border: `1.5px solid ${elemColor}44`,
           }}>
             {char.image ? (
-              <img src={char.image} alt={char.name} style={{
-                position: 'absolute', inset: 0, width: '100%', height: '100%',
-                objectFit: 'cover', objectPosition: 'top center',
-              }} />
+              <img
+                src={char.image}
+                alt={char.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center', display: 'block' }}
+              />
             ) : (
               <div style={{
-                position: 'absolute', inset: 0,
-                background: `linear-gradient(135deg, ${elemColor}33, ${rarityColor}33)`,
-              }} />
+                width: '100%', height: '100%',
+                background: `linear-gradient(155deg, ${char.colors?.bgFrom || '#111'} 0%, ${char.colors?.bgVia || '#1a1a2e'} 55%, ${elemColor}28 100%)`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ fontSize: 80, fontWeight: 800, color: elemColor, opacity: 0.12, fontFamily: 'serif', userSelect: 'none' }}>
+                  {char.name[0]}
+                </span>
+              </div>
             )}
             <div style={{
-              position: 'absolute', inset: 0,
-              background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 50%, transparent 100%)',
+              position: 'absolute', bottom: 0, left: 0, right: 0, height: '65%',
+              background: 'linear-gradient(to top, rgba(4,4,8,0.97) 0%, rgba(4,4,8,0.55) 55%, transparent 100%)',
+              pointerEvents: 'none',
             }} />
-            <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 3 }}>
-              {Array.from({ length: char.rarity || 4 }).map((_, i) => (
+            <div style={{
+              position: 'absolute', top: 10, right: 10,
+              width: 24, height: 24, borderRadius: '50%',
+              background: `${priorityColor}20`, border: `1.5px solid ${priorityColor}99`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 9, fontWeight: 700, color: priorityColor, backdropFilter: 'blur(6px)',
+            }}>
+              {char.priority}
+            </div>
+            <div style={{ position: 'absolute', top: 12, left: 10, display: 'flex', gap: 2 }}>
+              {Array(char.rarity).fill(0).map((_, i) => (
                 <div key={i} style={{
-                  width: 8, height: 8, borderRadius: '50%',
-                  background: rarityColor, boxShadow: `0 0 4px ${rarityColor}`,
+                  width: 5, height: 5, borderRadius: '50%',
+                  background: char.rarity === 5 ? '#FFD700' : '#C084FC', opacity: 0.9,
                 }} />
               ))}
             </div>
-            <div style={{ position: 'absolute', bottom: 10, left: 10, right: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '8px 11px 11px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{char.name}</span>
                 <span style={{
-                  fontSize: 14, fontWeight: 700, color: '#fff',
-                  letterSpacing: '0.02em', textShadow: '0 1px 4px #000a',
-                }}>{char.name}</span>
-                <span style={{
-                  fontSize: 8, fontWeight: 700, padding: '1px 5px', borderRadius: 4,
-                  background: `${elemColor}22`, color: elemColor,
-                  border: `1px solid ${elemColor}44`,
-                  letterSpacing: '0.1em', backdropFilter: 'blur(4px)',
-                }}>{char.element?.toUpperCase()}</span>
+                  fontSize: 7, fontWeight: 700, padding: '1px 5px', borderRadius: 4,
+                  background: `${elemColor}22`, color: elemColor, border: `1px solid ${elemColor}44`,
+                }}>
+                  {char.element.toUpperCase()}
+                </span>
               </div>
-              <div style={{ fontSize: 10, color: 'rgba(160,163,176,0.75)' }}>
+              <div style={{ fontSize: 9, color: 'rgba(160,163,176,0.65)', marginBottom: 5 }}>
                 {char.weapon} · {char.role}
               </div>
+              <div style={{ height: 2, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${progress}%`, borderRadius: 2, background: `linear-gradient(90deg, ${elemColor}88, ${elemColor})` }} />
+              </div>
+              <div style={{ fontSize: 9, color: 'rgba(160,163,176,0.4)', marginTop: 2 }}>{progress}% built</div>
             </div>
+            {IS_TOUCH && (
+              <div style={{
+                position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
+                fontSize: 7, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.06em',
+                pointerEvents: 'none', whiteSpace: 'nowrap',
+              }}>
+                TAP TO FLIP
+              </div>
+            )}
           </div>
 
-          {/* ── BACK FACE ── */}
+          {/* BACK FACE */}
           <div style={{
             position: 'absolute', inset: 0,
             backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
-            transform: 'rotateY(180deg)',
-            borderRadius: 16, overflow: 'hidden',
+            transform: 'rotateY(180deg)', borderRadius: 16, overflow: 'hidden',
             border: `1.5px solid ${elemColor}66`,
-            background: `linear-gradient(160deg, rgba(8,8,20,0.97) 0%, ${elemColor}30 100%)`,
-            display: 'flex', flexDirection: 'column',
-            padding: '12px 14px', gap: 7,
+            background: `linear-gradient(160deg, rgba(8,8,20,0.97) 0%, ${elemColor}28 100%)`,
+            display: 'flex', flexDirection: 'column', padding: '10px 12px 11px', gap: 7,
           }}>
-            {/* Name + element */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{char.name}</span>
               <span style={{
-                fontSize: 8, fontWeight: 700, padding: '1px 5px', borderRadius: 4,
-                background: `${elemColor}22`, color: elemColor,
-                border: `1px solid ${elemColor}44`, letterSpacing: '0.1em',
-              }}>{char.element?.toUpperCase()}</span>
+                fontSize: 7, fontWeight: 700, padding: '1px 5px', borderRadius: 4,
+                background: `${elemColor}22`, color: elemColor, border: `1px solid ${elemColor}44`,
+              }}>
+                {char.element.toUpperCase()}
+              </span>
             </div>
-
-            {/* Score ring — own row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <ProgressRing progress={score} size={44} color={elemColor} />
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>Build Score</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+              <ProgressRing progress={progress} size={40} color={elemColor} strokeWidth={3} showText />
+              <div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginBottom: 2 }}>Build Score</div>
+                <div style={{ fontSize: 10, color: elemColor, fontWeight: 600 }}>Weapon: {weaponLabel}</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>Pieces: {equippedCount}/5</div>
+              </div>
             </div>
-
-            {/* Artifact pieces — full-width row so all 5 fit */}
             <div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>Artifacts</div>
+              <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', marginBottom: 4 }}>ARTIFACTS</div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                {PIECE_KEYS.map(k => (
-                  <span key={k} style={{
-                    fontSize: 18,
-                    opacity: checklist[k] ? 1 : 0.2,
-                    filter: checklist[k] ? 'none' : 'grayscale(1)',
-                  }}>{PIECE_ICONS[k]}</span>
+                {PIECE_KEYS.map((k, i) => (
+                  <span key={k} style={{ fontSize: 17, opacity: cl[k] ? 1 : 0.2, filter: cl[k] ? 'none' : 'grayscale(1)' }}>
+                    {PIECE_ICONS[i]}
+                  </span>
                 ))}
               </div>
             </div>
-
-            {/* Weapon tier */}
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '5px 8px',
-            }}>
-              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>Weapon</span>
-              <span style={{
-                fontSize: 11, fontWeight: 700,
-                color: checklist.weapon_tier === 'bis' ? '#fbbf24' : elemColor,
-              }}>{weaponLabel}</span>
-            </div>
-
-            {/* Pieces done */}
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '5px 8px',
-            }}>
-              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>Pieces</span>
-              <span style={{
-                fontSize: 11, fontWeight: 700,
-                color: pieceDone === 5 ? '#86efac' : elemColor,
-              }}>{pieceDone}/5</span>
-            </div>
-
-            {/* Holographic sheen — only after flip settles */}
-            {flipDone && (
+            {IS_TOUCH ? (
               <div style={{
-                position: 'absolute', inset: 0, borderRadius: 16,
-                pointerEvents: 'none',
-                background: `radial-gradient(circle at ${tilt.lx}% ${tilt.ly}%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 35%, transparent 65%)`,
+                marginTop: 'auto', padding: '6px 10px', borderRadius: 8, textAlign: 'center',
+                background: `${elemColor}18`, border: `1px solid ${elemColor}55`,
+                fontSize: 10, fontWeight: 700, color: elemColor, letterSpacing: '0.04em',
+              }}>
+                TAP TO VIEW DETAILS →
+              </div>
+            ) : (
+              <div style={{
+                marginTop: 'auto', fontSize: 8,
+                color: 'rgba(255,255,255,0.18)', textAlign: 'center', letterSpacing: '0.04em',
+              }}>
+                CLICK TO VIEW DETAILS
+              </div>
+            )}
+            {flipDone && !IS_TOUCH && (
+              <div style={{
+                position: 'absolute', inset: 0, borderRadius: 16, pointerEvents: 'none',
+                background: `radial-gradient(circle at ${tilt.lx}% ${tilt.ly}%, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 40%, transparent 65%)`,
                 mixBlendMode: 'overlay',
               }} />
             )}
           </div>
-
         </div>
       </div>
     </div>
